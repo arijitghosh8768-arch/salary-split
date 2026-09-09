@@ -1,0 +1,23 @@
+# Node dependencies
+node_modules/
+
+# Production builds
+dist/
+build/
+
+# Local Environment & Secrets
+.env
+.env.local
+.env.production
+
+# Database & SQLite files
+*.db
+*.db-journal
+*.db-wal
+backend/salarysplit.db
+
+# System & IDE files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
