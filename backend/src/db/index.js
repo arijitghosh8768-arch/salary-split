@@ -133,6 +133,32 @@ export async function initDatabase() {
       timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
     );
   `);
+
+  // Seed default demo user if not exists
+  try {
+    const existingDemo = await db.get('SELECT id FROM users WHERE email = ?', ['demo@example.com']);
+    if (!existingDemo) {
+      const bcrypt = await import('bcryptjs');
+      const salt = await bcrypt.default.genSalt(10);
+      const password_hash = await bcrypt.default.hash('password123', salt);
+      const res = await db.run(
+        'INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)',
+        ['Demo User', 'demo@example.com', password_hash]
+      );
+      await db.run(
+        `INSERT INTO budget_rules (user_id, home_pct, invest_pct, emergency_pct, travel_pct, personal_pct)
+         VALUES (?, 35, 25, 10, 15, 15)`,
+        [res.lastID]
+      );
+      await db.run(
+        `INSERT INTO salary_records (user_id, month, salary) VALUES (?, ?, ?)`,
+        [res.lastID, new Date().toISOString().substring(0, 7), 50000]
+      );
+      console.log('✅ Seeded demo account: demo@example.com / password123');
+    }
+  } catch (err) {
+    console.error('Failed to seed demo account:', err);
+  }
 }
 
 export default db;
