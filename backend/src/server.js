@@ -14,16 +14,24 @@ import analyticsRoutes from './routes/analyticsRoutes.js';
 
 dotenv.config();
 
-// Initialize database schema
-initDatabase();
-
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Ensure DB initialization middleware for Serverless Function cold starts
+app.use(async (req, res, next) => {
+  try {
+    await initDatabase();
+    next();
+  } catch (err) {
+    console.error('Failed to initialize database on request:', err);
+    res.status(500).json({ error: 'Database Initialization Error' });
+  }
+});
 
 // Cybersecurity headers & CORS
 app.use(helmet());
 app.use(cors({
-  origin: '*', // Allows local dev frontend requests
+  origin: '*',
   credentials: true
 }));
 
@@ -49,6 +57,10 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal Server Error', message: process.env.NODE_ENV === 'development' ? err.message : undefined });
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 SalarySplit Backend running on http://localhost:${PORT}`);
-});
+if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`🚀 SalarySplit Backend running on http://localhost:${PORT}`);
+  });
+}
+
+export default app;
